@@ -1,16 +1,18 @@
 version: '3'
 
 services:
-  postgres:
-    image: postgres:11.1-alpine
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_DB: test
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: test
+  db:
+    image: mysql:5.7
+    restart: always
     volumes:
-      - "db:/var/lib/postgresql/data/"
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
 
 volumes:
-  db:
+  db_data: { }
