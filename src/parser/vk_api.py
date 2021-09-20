@@ -1,6 +1,8 @@
 import aiohttp as aiohttp
 import urllib.parse as urlparse
 
+from settings import MAX_POSTS_COUNT
+
 
 class VkAPI:
     VK_API_URL = "https://api.vk.com"
@@ -56,7 +58,7 @@ class VkAPI:
 
         return response
 
-    async def get_wall(self, domain, offset: int = 0, count: int = 1):
+    async def get_wall(self, domain, offset: int = 0, count: int = MAX_POSTS_COUNT):
         response = await self.request(self.WALL_GET_METHOD, {'domain': domain, 'offset': offset, 'count': count})
 
         print(response)

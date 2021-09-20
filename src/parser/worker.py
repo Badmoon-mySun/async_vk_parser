@@ -1,6 +1,6 @@
 import asyncio
 
-from settings import API_VERSION, GROUP_MEMBER_OFFSET, ACCESS_TOKEN
+from settings import API_VERSION, GROUP_MEMBER_OFFSET, ACCESS_TOKEN, MAX_POSTS_COUNT
 from vk_api import VkAPI
 
 
@@ -14,9 +14,9 @@ class Worker:
 
     async def do_work(self, vk: VkAPI):
         for domain in self.domains:
-            offset = 0
 
-            while True:
+            offset = 0
+            while False:
                 group_members = await vk.get_group_members(domain, offset)
                 users_ids = group_members['items']
 
@@ -26,13 +26,16 @@ class Worker:
                 if offset >= group_members['count']:
                     break
 
+            offset = 0
+            while True:
+                wall_posts = await vk.get_wall(domain, offset)
+
+                offset += MAX_POSTS_COUNT
+                if offset >= wall_posts['count']:
+                    break
+
     def start_worker(self):
         vk = VkAPI(self.vk_token, API_VERSION)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.do_work(vk))
-
-
-if __name__ == '__main__':
-    worker = Worker(ACCESS_TOKEN, ['mzk'])
-    worker.start_worker()
