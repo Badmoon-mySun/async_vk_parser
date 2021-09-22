@@ -1,9 +1,10 @@
 import os
 
 from dotenv import load_dotenv, find_dotenv
-from peewee import MySQLDatabase
 
 load_dotenv(find_dotenv())
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ACCESS_TOKEN = os.environ.get("VK_ACCESS_TOKEN")
 API_VERSION = '5.131'
@@ -16,6 +17,3 @@ DB_NAME = os.environ.get("DB_NAME")
 DB_PORT = int(os.environ.get("DB_PORT", "3306"))
 DB_USERNAME = os.environ.get("DB_USERNAME")
 DB_PASSWORD = os.environ.get("DB_PASSWORD")
-
-print(DB_USERNAME, DB_PASSWORD, DB_PORT, DB_HOST, DB_NAME)
-

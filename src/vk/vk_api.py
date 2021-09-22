@@ -5,10 +5,12 @@ from settings import MAX_POSTS_COUNT
 
 
 class VkAPI:
+    VK_URL = 'https://vk.com'
     VK_API_URL = "https://api.vk.com"
     GROUP_MEMBERS_METHOD = 'groups.getMembers'
     USERS_GET_METHOD = 'users.get'
     WALL_GET_METHOD = 'wall.get'
+    GROUPS_GET_GROUPS = 'groups.getById'
     access_token: str
     v: str
 
@@ -39,28 +41,36 @@ class VkAPI:
 
     async def request(self, api_method: str, params: dict, method: str = 'GET', body=None, headers=None):
         uri = self.__generate_uri(api_method, **params)
-        print(uri)
         response = await self.__request(uri, method, body, headers)
 
-        return response['response']
+        try:
+            return response['response']
+        except KeyError:
+            return {}
 
     async def get_group_members(self, group_id: str, offset: int = 0) -> dict:
         response = await self.request(self.GROUP_MEMBERS_METHOD, {'group_id': group_id, 'offset': offset})
 
-        print(response)
-
         return response
 
     async def get_users(self, user_ids: str) -> dict:
-        response = await self.request(self.USERS_GET_METHOD, {'user_ids': user_ids})
-
-        print(response)
+        response = await self.request(self.USERS_GET_METHOD, {'user_ids': user_ids, 'fields': 'sex,bdate,contacts'})
 
         return response
 
     async def get_wall(self, domain, offset: int = 0, count: int = MAX_POSTS_COUNT):
         response = await self.request(self.WALL_GET_METHOD, {'domain': domain, 'offset': offset, 'count': count})
+        print(f'posts offset - {offset}')
 
-        print(response)
+        return response
+
+    async def get_posts_count(self, domain):
+        response = await self.request(self.WALL_GET_METHOD, {'domain': domain, 'count': 0})
+
+        return response
+
+    async def get_groups(self, domains: str):
+        response = await self.request(self.GROUPS_GET_GROUPS,
+                                      {'group_ids': domains, 'fields': 'description,members_count'})
 
         return response
