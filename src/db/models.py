@@ -1,10 +1,17 @@
 import json
+import os.path
 
 from peewee import *
 
-from settings import DB_NAME, DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT
+from settings import DB_NAME, DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, ROOT_DIR
 
-db = MySQLDatabase(DB_NAME, user=DB_USERNAME, passwd=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+mysql_db = MySQLDatabase(DB_NAME, user=DB_USERNAME, passwd=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
+
+sqlite_db = SqliteDatabase(os.path.join(ROOT_DIR, 'sqlite.db'),
+                           pragmas={
+                               'journal_mode': 'wal',
+                               'cache_size': -1024 * 64}
+                           )
 
 
 class JSONField(TextField):
@@ -17,7 +24,7 @@ class JSONField(TextField):
 
 
 class Metadata(Model):
-    Id = IntegerField()
+    Id = IntegerField(primary_key=True)
     DatasetSource = CharField(max_length=20, default='data.mos.ru')
     IdentificationNumber = TextField()
     CategoryId = IntegerField()
@@ -35,18 +42,18 @@ class Metadata(Model):
     Attributes = JSONField()
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'metadata'
 
 
 class Datasets(Model):
-    DatasetId = ForeignKeyField(model=Metadata, field='Id')
+    DatasetId = ForeignKeyField(model=Metadata, to_field='Id', column_name='DatasetId')
     SubdatasetId = IntegerField()
     DatasetSource = CharField(max_length=20, default='data.mos.ru')
     jdoc = JSONField()
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'datasets'
 
 
@@ -54,12 +61,12 @@ class Indicators(Model):
     Id = AutoField(unique=True)
     Name = TextField()
     Type = TextField(null=True)
-    DatasetId = ForeignKeyField(model=Metadata, field='Id')
+    DatasetId = ForeignKeyField(model=Datasets, to_field='DatasetId', column_name='DatasetId')
     Positive = BooleanField(null=True)
     Info = TextField(null=True)
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'indicators'
 
 
@@ -68,25 +75,25 @@ class AdmAreas(Model):
     Name = CharField(max_length=50, unique=True)
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'adm_areas'
 
 
 class Districts(Model):
     Id = AutoField(unique=True)
-    AreaId = ForeignKeyField(model=AdmAreas, field='Id')
+    AreaId = ForeignKeyField(model=AdmAreas, to_field='Id', column_name='AreaId')
     Name = CharField(max_length=50)
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'districts'
 
 
 class IndicatorsValues(Model):
     Id = AutoField(unique=True)
-    IndicatorId = ForeignKeyField(model=Indicators, field='Id')
-    AreaId = ForeignKeyField(model=AdmAreas, field='Id')
-    DistrictId = ForeignKeyField(model=Districts, field='Id')
+    IndicatorId = ForeignKeyField(model=Indicators, to_field='Id', column_name='IndicatorId')
+    AreaId = ForeignKeyField(model=AdmAreas, to_field='Id', column_name='AreaId')
+    DistrictId = ForeignKeyField(model=Districts, to_field='Id', column_name='DistrictId')
     Value = FloatField(null=True)
     PrevValue = FloatField(null=True)
     TerritoryRank = SmallIntegerField(null=True)
@@ -96,15 +103,15 @@ class IndicatorsValues(Model):
     IsNewest = BooleanField(default=False)
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'indicators_values'
 
 
 class IndicatorsValuesNewest(Model):
-    Id = AutoField(unique=True)
-    IndicatorId = ForeignKeyField(model=Indicators, field='Id')
-    AreaId = ForeignKeyField(model=AdmAreas, field='Id')
-    DistrictId = ForeignKeyField(model=Districts, field='Id')
+    Id = ForeignKeyField(model=IndicatorsValues, to_field='Id', column_name='Id')
+    IndicatorId = ForeignKeyField(model=Indicators, to_field='Id', column_name='IndicatorId')
+    AreaId = ForeignKeyField(model=AdmAreas, to_field='Id', column_name='AreaId')
+    DistrictId = ForeignKeyField(model=Districts, to_field='Id', column_name='DistrictId')
     Value = FloatField(null=True)
     PrevValue = FloatField(null=True)
     TerritoryRank = SmallIntegerField(null=True)
@@ -113,5 +120,26 @@ class IndicatorsValuesNewest(Model):
     VersionDate = DateField()
 
     class Meta:
-        database = db
+        database = mysql_db
         table_name = 'indicators_values_newest'
+
+
+class IdStorage(Model):
+    id = AutoField(unique=True)
+    screen_name = IntegerField(index=True)
+    data_type = CharField()
+    metadata_id = IntegerField(unique=True)
+    dataset_id = IntegerField()
+    indicator_id = IntegerField()
+    last_indicator_value_id = IntegerField()
+    newest_indicator_value_id = IntegerField()
+    version = FloatField()
+    value = IntegerField()
+
+    class Meta:
+        database = sqlite_db
+        table_name = 'id_storage'
+
+
+if not sqlite_db.table_exists('id_storage'):
+    sqlite_db.create_tables([IdStorage])
