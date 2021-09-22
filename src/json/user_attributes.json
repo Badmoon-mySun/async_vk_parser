@@ -1,0 +1,56 @@
+[
+  {
+    "Name": "id",
+    "Type": "INTEGER",
+    "Caption": "идентификатор пользователя",
+    "SubColumns": null
+  },
+  {
+    "Name": "first_name",
+    "Type": "STRING",
+    "Caption": "имя",
+    "SubColumns": null
+  },
+  {
+    "Name": "last_name",
+    "Type": "STRING",
+    "Caption": "фамилия",
+    "SubColumns": null
+  },
+  {
+    "Name": "sex",
+    "Type": "INTEGER",
+    "Caption": "пол. 1 - женский, 2 - мужской",
+    "SubColumns": null
+  },
+  {
+    "Name": "bdate",
+    "Type": "STRING",
+    "Caption": "дата рождения. Возвращается в формате D.M.YYYY или D.M (если год рождения скрыт). Если дата рождения скрыта целиком, поле отсутствует в ответе",
+    "SubColumns": null
+  },
+  {
+    "Name": "is_closed",
+    "Type": "BOOLEAN",
+    "Caption": "скрыт ли профиль пользователя настройками приватности",
+    "SubColumns": null
+  },
+  {
+    "Name": "home_phone",
+    "Type": "STRING",
+    "Caption": "дополнительный номер телефона пользователя",
+    "SubColumns": null
+  },
+  {
+    "Name": "mobile_phone",
+    "Type": "STRING",
+    "Caption": "номер мобильного телефона пользователя",
+    "SubColumns": null
+  },
+  {
+    "Name": "deactivated",
+    "Type": "STRING",
+    "Caption": "поле возвращается, если страница пользователя удалена или заблокирована, содержит значение deleted или banned. В этом случае опциональные поля не возвращаются",
+    "SubColumns": null
+  }
+]

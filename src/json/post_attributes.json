@@ -1,0 +1,56 @@
+[
+  {
+    "Name": "id",
+    "Type": "INTEGER",
+    "Caption": "идентификатор записи",
+    "SubColumns": null
+  },
+  {
+    "Name": "owner_id",
+    "Type": "INTEGER",
+    "Caption": "идентификатор владельца стены, на которой размещена запись",
+    "SubColumns": null
+  },
+  {
+    "Name": "from_id",
+    "Type": "INTEGER",
+    "Caption": "идентификатор автора записи (от чьего имени опубликована запись)",
+    "SubColumns": null
+  },
+  {
+    "Name": "date",
+    "Type": "INTEGER",
+    "Caption": "время публикации записи в формате unixtime",
+    "SubColumns": null
+  },
+  {
+    "Name": "text",
+    "Type": "STRING",
+    "Caption": "текст записи",
+    "SubColumns": null
+  },
+  {
+    "Name": "comments_count",
+    "Type": "INTEGER",
+    "Caption": "количество комментариев",
+    "SubColumns": null
+  },
+  {
+    "Name": "likes_count",
+    "Type": "INTEGER",
+    "Caption": "число пользователей, которым понравилась запись",
+    "SubColumns": null
+  },
+  {
+    "Name": "reposts_count",
+    "Type": "INTEGER",
+    "Caption": "число пользователей, скопировавших запись",
+    "SubColumns": null
+  },
+  {
+    "Name": "views_count",
+    "Type": "INTEGER",
+    "Caption": "число просмотров записи",
+    "SubColumns": null
+  }
+]
