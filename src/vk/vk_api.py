@@ -35,7 +35,7 @@ class VkAPI:
             async with session.request(method, uri, json=body, headers=headers) as response:
                 try:
                     return await response.json()
-                except Exception as e:
+                except KeyError as e:
                     print(e)
                     return {'response': {}}
 

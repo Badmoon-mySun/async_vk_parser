@@ -24,7 +24,7 @@ class JSONField(TextField):
 
 
 class Metadata(Model):
-    Id = IntegerField(primary_key=True)
+    Id = IntegerField(primary_key=True, column_name='Id')
     DatasetSource = CharField(max_length=20, default='data.mos.ru')
     IdentificationNumber = TextField()
     CategoryId = IntegerField()
@@ -47,7 +47,7 @@ class Metadata(Model):
 
 
 class Datasets(Model):
-    DatasetId = ForeignKeyField(model=Metadata, to_field='Id', column_name='DatasetId')
+    DatasetId = ForeignKeyField(model=Metadata, to_field='Id', column_name='DatasetId', primary_key=True)
     SubdatasetId = IntegerField()
     DatasetSource = CharField(max_length=20, default='data.mos.ru')
     jdoc = JSONField()
@@ -126,15 +126,9 @@ class IndicatorsValuesNewest(Model):
 
 class IdStorage(Model):
     id = AutoField(unique=True)
-    screen_name = IntegerField(index=True)
     data_type = CharField()
+    district = CharField()
     metadata_id = IntegerField(unique=True)
-    dataset_id = IntegerField()
-    indicator_id = IntegerField()
-    last_indicator_value_id = IntegerField()
-    newest_indicator_value_id = IntegerField()
-    version = FloatField()
-    value = IntegerField()
 
     class Meta:
         database = sqlite_db

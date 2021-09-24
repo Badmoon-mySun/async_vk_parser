@@ -2,9 +2,10 @@ import asyncio
 import datetime
 
 from db.models import *
-from parser.sevrvices import save_items_to_datasets, save_metadata, save_indicator_value, save_indicator_newest, \
-    get_id_storage_if_exist, update_group, save_new_group, clean_post
-from settings import API_VERSION, GROUP_MEMBER_OFFSET, MAX_POSTS_COUNT
+from parser.services import save_items_to_datasets, save_metadata, save_indicator_value, save_indicator_newest, \
+    get_id_storage_if_exist, update_district_indicators, save_new_districts_items, clean_post, \
+    get_or_create_metadata, update_metadata, delete_dataset_by_id, set_indicators_rank
+from settings import API_VERSION, GROUP_MEMBER_OFFSET, MAX_POSTS_COUNT, USER_ATTRIBUTES, POST_ATTRIBUTES
 from vk.vk_api import VkAPI
 
 
@@ -47,9 +48,13 @@ class Worker:
             task = asyncio.create_task(vk.get_wall(domain, offset_vk))
             tasks.append(task)
 
-            offset_vk += MAX_POSTS_COUNT
-            if offset_vk >= wall_posts['count']:
-                break
+            try:
+                offset_vk += MAX_POSTS_COUNT
+                if offset_vk >= wall_posts['count']:
+                    break
+            except KeyError as err:
+                print(err)
+                return []
 
         posts += wall_posts['items']
 
@@ -67,53 +72,67 @@ class Worker:
         save_items_to_datasets(metadata_id, items[count // 2:])
         save_items_to_datasets(metadata_id, items[:count // 2])
 
-    async def __do_iteration(self, vk: VkAPI, group: dict, district_name: str, data_type: str, attribute: list,
-                             caption: str, count: int, async_get_items_func):
+        return len(items)
 
-        id_storage = get_id_storage_if_exist(group['screen_name'], data_type)
-        description = group['description']
-        domain = group['screen_name']
-
-        metadata_id = id_storage.metadata_id if id_storage else save_metadata(description, caption, count, attribute).Id
-        print(f'metada id {metadata_id}')
+    async def __do_iteration(self, vk: VkAPI, groups: list, district_name: str, caption: str,
+                             metadata: Metadata, async_get_items_func):
+        district = Districts.get(Districts.Name == district_name)
 
         tasks = []
-        offset = 0
-        while offset < count:
-            task = asyncio.create_task(
-                self.__get_and_save_items(vk, metadata_id, domain, offset, 1000, async_get_items_func)
-            )
+        for group in groups:
+            offset = 0
+            while offset < group['members_count']:
+                task = asyncio.create_task(
+                    self.__get_and_save_items(vk, metadata.Id, group['screen_name'], offset, 1000, async_get_items_func)
+                )
 
-            tasks.append(task)
-            offset += 1000
+                tasks.append(task)
+                offset += 1000
+
+        counts = await asyncio.gather(*tasks)
+        count_items = sum(counts)
 
         try:
-            if id_storage:
-                await update_group(id_storage, tasks, count)
+            if metadata.ItemsCount:
+                indicator = Indicators.get(Indicators.DatasetId == metadata.Id)
+                await update_district_indicators(indicator.Id, district.Id, count_items)
             else:
-                await save_new_group(group, tasks, caption, district_name, data_type, metadata_id)
+                await save_new_districts_items(caption, metadata.Id, district, count_items)
         except ValueError as e:
             print(e)
 
-    async def do_work(self, vk: VkAPI):
+    async def __do_work(self, vk: VkAPI, caption: str, description: str, data_type: str, async_get_items_func):
+        metadata_ids = []
+
         for district, domains in self.data.items():
             try:
                 groups = await self.__get_groups_info(vk, ','.join(domains))
-                for group in groups:
-                    posts_count = await vk.get_posts_count(group['screen_name'])
-                    user_caption = f'Аудитория пользователей \"{group["name"]}\"'
-                    post_caption = f'Посты сообщества \"{group["name"]}\"'
 
-                    first_task = asyncio.create_task(
-                        self.__do_iteration(vk, group, district, 'users', [{}], user_caption, group['members_count'], self.__get_group_users)
-                    )
-                    second_task = asyncio.create_task(
-                        self.__do_iteration(vk, group, district, 'posts', [{}], post_caption, posts_count['count'], self.__get_group_posts)
-                    )
+                metadata = get_or_create_metadata(data_type, district, caption, description, USER_ATTRIBUTES)
 
-                    await asyncio.gather(first_task, second_task)
+                delete_dataset_by_id(metadata.Id)
+
+                await self.__do_iteration(vk, groups, district, caption, metadata, async_get_items_func)
+
+                update_metadata(metadata)
+                metadata_ids.append(metadata.Id)
             except ValueError as e:
                 print(e)
+
+        set_indicators_rank(metadata_ids)
+
+    async def do_work(self, vk: VkAPI):
+        users_task = asyncio.create_task(
+            self.__do_work(vk, 'Аудитория пользователей Вконтакте', 'Участники сообществ по районам Москвы',
+                           'users', self.__get_group_users)
+        )
+
+        posts_task = asyncio.create_task(
+            self.__do_work(vk, 'Количество публикаций в Вконтакте', 'Посты сообществ по районам Москвы',
+                           'posts', self.__get_group_posts)
+        )
+
+        await asyncio.gather(users_task, posts_task)
 
     def start_worker(self):
         vk = VkAPI(self.vk_token, API_VERSION)

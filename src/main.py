@@ -12,6 +12,13 @@ if __name__ == '__main__':
                 # 'vyhino_zhulebino_online',
                 # 'uvao_vihino',
                 # 'vihino_julebino_nekrasovka'
+            ],
+            'Академический район': [
+                'akademicheskiy_online',
+                # 'akadem_raion'
+            ],
+            'Алексеевский район': [
+                'upravaalexeevsky'
             ]
         }
 
@@ -19,9 +26,3 @@ if __name__ == '__main__':
         worker.start_worker()
     except ValueError as e:
         print(e)
-
-    # metadata = Metadata(Id=10123, DatasetSource='vk', IdentificationNumber='', CategoryId=0, CategoryCaption='',
-    #                     Category1LevelCaption='', DepartmentId=0, DepartmentCaption='', Caption='caption',
-    #                     Description='description', Keywords='kewords', ContainsGeodata=False, VersionNumber='1',
-    #                     VersionDate=datetime.date.today(), ItemsCount=1, Attributes='[{"help": "some json text"}]')
-    # metadata.save()
