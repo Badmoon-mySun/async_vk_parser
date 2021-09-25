@@ -242,8 +242,6 @@ def set_indicators_rank(metadata_ids: List[int]):
         indicator_value_newest = IndicatorsValuesNewest.get(
             IndicatorsValuesNewest.Id == indicator_value.Id
         )
-        """ Здравствуйте отправляю дамп данных исправленного парсера вк, здесь 3 района по 1 группе
-        """
 
         if indicator_value.TerritoryRank is not None and indicator_value.TerritoryRank == last_value:
             rank -= 1
