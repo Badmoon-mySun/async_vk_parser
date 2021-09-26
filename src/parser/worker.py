@@ -4,7 +4,7 @@ import datetime
 from db.models import *
 from parser.services import save_items_to_datasets, save_metadata, save_indicator_value, save_indicator_newest, \
     get_id_storage_if_exist, update_district_indicators, save_new_districts_items, clean_post, \
-    get_or_create_metadata, update_metadata, delete_dataset_by_id, set_indicators_rank
+    get_or_create_metadata, update_metadata, delete_dataset_by_id, set_indicators_rank, get_new_indicator_value_or_none
 from settings import API_VERSION, GROUP_MEMBER_OFFSET, MAX_POSTS_COUNT, USER_ATTRIBUTES, POST_ATTRIBUTES
 from vk.vk_api import VkAPI
 
@@ -93,33 +93,32 @@ class Worker:
         count_items = sum(counts)
 
         try:
-            if metadata.ItemsCount:
-                indicator = Indicators.get(Indicators.DatasetId == metadata.Id)
-                await update_district_indicators(indicator.Id, district.Id, count_items)
+            indicator = Indicators.get_or_none(Indicators.DatasetId == metadata.Id)
+            indicator_value = get_new_indicator_value_or_none(indicator.Id, district.Id) if indicator else None
+
+            if indicator_value:
+                print(f'metadata {metadata.Id} items count = {metadata.ItemsCount}')
+                await update_district_indicators(indicator_value, count_items)
             else:
-                await save_new_districts_items(caption, metadata.Id, district, count_items)
+                print(f'metadata {metadata.Id} items count set = {count_items}')
+                await save_new_districts_items(caption, metadata.Id, district, count_items, indicator)
         except ValueError as e:
             print(e)
 
     async def __do_work(self, vk: VkAPI, caption: str, description: str, data_type: str, async_get_items_func):
-        metadata_ids = []
+        metadata = get_or_create_metadata(data_type, caption, description, USER_ATTRIBUTES)
+        delete_dataset_by_id(metadata.Id)
 
         for district, domains in self.data.items():
             try:
                 groups = await self.__get_groups_info(vk, ','.join(domains))
 
-                metadata = get_or_create_metadata(data_type, district, caption, description, USER_ATTRIBUTES)
-
-                delete_dataset_by_id(metadata.Id)
-
                 await self.__do_iteration(vk, groups, district, caption, metadata, async_get_items_func)
-
-                update_metadata(metadata)
-                metadata_ids.append(metadata.Id)
             except ValueError as e:
                 print(e)
 
-        set_indicators_rank(metadata_ids)
+        update_metadata(metadata)
+        set_indicators_rank(metadata.Id)
 
     async def do_work(self, vk: VkAPI):
         users_task = asyncio.create_task(

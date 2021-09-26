@@ -127,7 +127,6 @@ class IndicatorsValuesNewest(Model):
 class IdStorage(Model):
     id = AutoField(unique=True)
     data_type = CharField()
-    district = CharField()
     metadata_id = IntegerField(unique=True)
 
     class Meta:
