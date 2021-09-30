@@ -1,28 +1,14 @@
 from db.models import *
-import datetime
 
 from parser.worker import Worker
-from settings import ACCESS_TOKEN
+from settings import ACCESS_TOKEN, _json_files_dir
 
 if __name__ == '__main__':
-    try:
-        data = {
-            'район Выхино-Жулебино': [
-                'vykhino_zhulebino_online',
-                # 'vyhino_zhulebino_online',
-                # 'uvao_vihino',
-                # 'vihino_julebino_nekrasovka'
-            ],
-            'Академический район': [
-                'akademicheskiy_online',
-                # 'akadem_raion'
-            ],
-            'Алексеевский район': [
-                'upravaalexeevsky'
-            ]
-        }
+    with open(os.path.join(_json_files_dir, 'groups2.json')) as data:
+        groups = json.loads(data.read())
 
-        worker = Worker(ACCESS_TOKEN, data)
-        worker.start_worker()
-    except ValueError as e:
-        print(e)
+        try:
+            worker = Worker(ACCESS_TOKEN, groups)
+            worker.start_worker()
+        except ValueError as e:  # TODO заменить ValueError на Exception везде
+            print(e)

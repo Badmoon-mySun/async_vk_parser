@@ -28,6 +28,10 @@ class Worker:
 
         while offset_vk < offset + count:
             group_members = await vk.get_group_members(domain, offset_vk)
+
+            if not group_members:
+                break
+
             users += await vk.get_users(group_members['items'])
             print(f'user offset - {offset_vk}')
 

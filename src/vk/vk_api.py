@@ -46,6 +46,7 @@ class VkAPI:
         try:
             return response['response']
         except KeyError:
+            print(response)
             return {}
 
     async def get_group_members(self, group_id: str, offset: int = 0) -> dict:
